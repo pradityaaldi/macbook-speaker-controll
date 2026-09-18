@@ -8,6 +8,10 @@ Built and tested on a MacBook Pro running macOS 15.7.
 
 <img src="Resources/AppIcon.png" width="96" alt="App icon">
 
+## Demo
+
+<video src="demo.mp4" controls muted loop playsinline width="720"></video>
+
 ## Features
 
 - **Left / Right volume** — trim each channel separately.
