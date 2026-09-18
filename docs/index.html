@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speaker Control — independent left and right speakers for macOS</title>
+<meta name="description" content="A macOS menu-bar app that controls the left and right speakers of your MacBook independently, and can disable either side with a true mono downmix so nothing is lost.">
+<meta name="theme-color" content="#0a0a0a">
+<meta property="og:title" content="Speaker Control">
+<meta property="og:description" content="Independent left and right speakers for macOS, with a true mono downmix.">
+<meta property="og:type" content="website">
+<link rel="icon" href="appicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['-apple-system', 'BlinkMacSystemFont', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+          mono: ['ui-monospace', 'SFMono-Regular', 'SF Mono', 'Menlo', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-feature-settings: "tnum" 1; }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 22px;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    background: #d4d4d4;
+    border-radius: 1px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: -6px;
+    background: #0a0a0a;
+    border-radius: 2px;
+  }
+  input[type="range"]::-moz-range-track {
+    height: 4px;
+    background: #d4d4d4;
+    border-radius: 1px;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #0a0a0a;
+    border: none;
+    border-radius: 2px;
+  }
+  input[type="range"]:focus-visible {
+    outline: 2px solid #0a0a0a;
+    outline-offset: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body class="bg-neutral-950 font-sans text-neutral-900 antialiased">
+
+<!-- Hero -->
+<section class="relative flex min-h-[94svh] items-center justify-center overflow-hidden">
+  <div class="absolute inset-0 grid grid-rows-2 md:grid-cols-2 md:grid-rows-1" aria-hidden="true">
+    <div class="bg-neutral-950"></div>
+    <div class="bg-white"></div>
+  </div>
+
+  <div class="relative z-10 flex w-full max-w-2xl flex-col items-center gap-8 px-5 py-20">
+
+    <div class="flex flex-wrap items-center justify-center gap-2">
+      <span class="border border-neutral-700 bg-neutral-950 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-300">macOS 13+</span>
+      <a href="#install" class="border border-neutral-700 bg-neutral-950 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-300 transition-colors hover:border-neutral-50 hover:text-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-50">Install</a>
+      <a href="https://github.com/pradityaaldi/macbook-speaker-controll" class="border border-neutral-700 bg-neutral-950 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-300 transition-colors hover:border-neutral-50 hover:text-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-50">GitHub</a>
+    </div>
+
+    <div class="bg-neutral-950 px-6 py-5 text-center">
+      <h1 class="text-4xl font-semibold tracking-tight text-white md:text-6xl">Speaker Control</h1>
+      <p class="mt-3 text-sm text-neutral-400 md:text-base">Left and right speakers of a MacBook, driven separately.</p>
+    </div>
+
+    <!-- Control panel mockup -->
+    <div class="w-full max-w-[340px] border border-neutral-950 bg-white p-3.5 text-left">
+      <div class="flex items-center gap-2.5">
+        <img src="appicon.png" alt="" width="28" height="28" class="h-7 w-7">
+        <div class="min-w-0">
+          <p class="truncate text-sm font-semibold">MacBook Pro Speakers</p>
+          <p class="text-xs text-neutral-500">Left/right control available</p>
+        </div>
+      </div>
+
+      <hr class="my-3 border-neutral-200">
+
+      <div>
+        <div class="flex items-baseline justify-between">
+          <label for="volume" class="text-sm font-medium">Main volume</label>
+          <output for="volume" id="volume-out" class="font-mono text-sm text-neutral-500">62%</output>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="mute" aria-pressed="false" class="shrink-0 border border-neutral-300 p-1 text-neutral-600 transition-colors hover:border-neutral-950 hover:text-neutral-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950" title="Mute">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 2.5 4.5 5.5H2v5h2.5L8 13.5z"/><path id="mute-slash" class="hidden" d="M2 2l12 12" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+            <span class="sr-only">Mute</span>
+          </button>
+          <input type="range" id="volume" min="0" max="100" value="62" aria-label="Main volume">
+        </div>
+      </div>
+
+      <p class="mt-3 text-sm font-medium">Left / right volume</p>
+      <div class="mt-2 grid grid-cols-2 gap-4">
+        <div>
+          <div class="flex items-baseline justify-between">
+            <label for="left" class="font-mono text-[11px] uppercase tracking-widest text-neutral-500">Left</label>
+            <output for="left" id="left-out" class="font-mono text-xs text-neutral-500">50%</output>
+          </div>
+          <input type="range" id="left" min="0" max="100" value="50" aria-label="Left volume">
+        </div>
+        <div>
+          <div class="flex items-baseline justify-between">
+            <label for="right" class="font-mono text-[11px] uppercase tracking-widest text-neutral-500">Right</label>
+            <output for="right" id="right-out" class="font-mono text-xs text-neutral-500">50%</output>
+          </div>
+          <input type="range" id="right" min="0" max="100" value="50" aria-label="Right volume">
+        </div>
+      </div>
+
+      <div class="mt-3 grid grid-cols-3 gap-1.5">
+        <button type="button" id="left-only" class="border border-neutral-300 px-2 py-1.5 text-xs transition-colors hover:border-neutral-950 hover:bg-neutral-950 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950">← Left only</button>
+        <button type="button" id="right-only" class="border border-neutral-300 px-2 py-1.5 text-xs transition-colors hover:border-neutral-950 hover:bg-neutral-950 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950">Right only →</button>
+        <button type="button" id="stereo" class="border border-neutral-300 px-2 py-1.5 text-xs transition-colors hover:border-neutral-950 hover:bg-neutral-950 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950">↔ Stereo</button>
+      </div>
+
+      <label class="mt-3 flex cursor-pointer items-start gap-3">
+        <input type="checkbox" id="mono" role="switch" class="peer sr-only">
+        <span aria-hidden="true" class="mt-0.5 flex h-5 w-9 shrink-0 items-center border border-neutral-400 bg-neutral-200 p-0.5 transition-colors peer-checked:justify-end peer-checked:border-neutral-950 peer-checked:bg-neutral-950 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-neutral-950">
+          <span class="h-3.5 w-3.5 bg-white outline outline-1 outline-neutral-400 transition-colors"></span>
+        </span>
+        <span>
+          <span class="block text-sm font-medium">Mono (mix L+R)</span>
+          <span class="block text-xs text-neutral-500">Audio from the disabled side stays audible</span>
+        </span>
+      </label>
+
+      <p id="mono-hint" class="mt-3 hidden border border-neutral-950 bg-neutral-100 p-2 text-xs text-neutral-700">
+        One side is at 0%. Turn on Mono so its audio is not lost.
+      </p>
+    </div>
+
+    <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500 md:text-neutral-400">Demo and one-line install below</p>
+  </div>
+</section>
+
+<!-- Two facts, split like the speakers -->
+<section class="grid md:grid-cols-2">
+  <div class="bg-neutral-950 px-6 py-14 md:py-20">
+    <div class="mx-auto max-w-md md:mr-12 md:text-right">
+      <h2 class="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-400">Mono downmix</h2>
+      <p class="mt-3 text-lg leading-relaxed text-neutral-100">Switching a speaker off normally drops whatever was in that channel. Mono sums left and right inside the audio driver, so nothing goes missing.</p>
+      <p class="mt-4 font-mono text-xs text-neutral-500">kAudioHardwarePropertyMixStereoToMono</p>
+    </div>
+  </div>
+  <div class="bg-white px-6 py-14 md:py-20">
+    <div class="mx-auto max-w-md md:ml-12">
+      <h2 class="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500">Pan law</h2>
+      <p class="mt-3 text-lg leading-relaxed text-neutral-900">Balance on these devices is not a mixer. The sliders invert its measured constant-power curve, so 100% / 50% is a real 2:1 ratio.</p>
+      <p class="mt-4 font-mono text-xs text-neutral-500">p = 2/π · atan2(right, left)</p>
+    </div>
+  </div>
+</section>
+
+<!-- Demo -->
+<section class="bg-neutral-100 px-5 py-20">
+  <div class="mx-auto max-w-3xl">
+    <h2 class="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500">Demo</h2>
+    <p class="mt-3 max-w-xl text-lg leading-relaxed text-neutral-900">Twenty-four seconds on a real MacBook: trimming one side, disabling the other, and the mono downmix keeping both channels audible.</p>
+
+    <div class="mt-8 border border-neutral-950 bg-neutral-950 p-1">
+      <video src="demo.mp4" controls playsinline preload="metadata" class="block w-full">
+        <a href="demo.mp4" class="text-neutral-100 underline">Download the demo video</a>
+      </video>
+    </div>
+    <p class="mt-3 font-mono text-xs text-neutral-500">demo.mp4 · 1728 × 1080 · 24 s</p>
+  </div>
+</section>
+
+<!-- Install -->
+<section id="install" class="bg-neutral-950 px-5 py-20">
+  <div class="mx-auto grid max-w-5xl gap-12 md:grid-cols-2">
+    <div>
+      <h2 class="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-400">Install</h2>
+      <p class="mt-3 text-xl font-medium text-white">One command, no build tools.</p>
+      <p class="mt-3 max-w-md text-sm leading-relaxed text-neutral-400">Downloads the latest release into <code class="font-mono text-neutral-200">/Applications</code>, quits any running copy first, and clears the quarantine flag so Gatekeeper stays quiet.</p>
+
+      <div class="mt-6 border border-neutral-700 bg-neutral-900">
+        <div class="flex items-center justify-between gap-3 border-b border-neutral-800 px-3 py-2">
+          <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500">Terminal</span>
+          <button type="button" id="copy" class="border border-neutral-700 px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-300 transition-colors hover:border-neutral-50 hover:text-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-50">Copy</button>
+        </div>
+        <pre class="overflow-x-auto px-3 py-3 font-mono text-xs leading-relaxed text-neutral-100"><code id="install-cmd">curl -fsSL https://raw.githubusercontent.com/pradityaaldi/macbook-speaker-controll/main/install.sh | bash</code></pre>
+      </div>
+      <p id="copy-status" class="mt-2 font-mono text-xs text-neutral-500" role="status" aria-live="polite"></p>
+    </div>
+
+    <div>
+      <h2 class="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-400">By hand</h2>
+      <p class="mt-3 text-xl font-medium text-white">Or take the zip.</p>
+      <ol class="mt-3 max-w-md space-y-2 text-sm leading-relaxed text-neutral-400">
+        <li>Download the bundle from the latest release.</li>
+        <li>Move <code class="font-mono text-neutral-200">Speaker Control.app</code> to <code class="font-mono text-neutral-200">/Applications</code>.</li>
+        <li>Launch it: the first time, right-click, then <span class="text-neutral-200">Open</span>.</li>
+      </ol>
+
+      <div class="mt-6 flex flex-wrap gap-2">
+        <a href="https://github.com/pradityaaldi/macbook-speaker-controll/releases/latest" class="border border-neutral-50 bg-neutral-50 px-4 py-2 text-sm font-medium text-neutral-950 transition-colors hover:bg-neutral-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-50">Download the latest release</a>
+        <a href="https://github.com/pradityaaldi/macbook-speaker-controll#build" class="border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-200 transition-colors hover:border-neutral-50 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-50">Build from source</a>
+      </div>
+
+      <dl class="mt-8 grid gap-4 border-t border-neutral-800 pt-6 text-sm sm:grid-cols-2">
+        <div>
+          <dt class="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500">Requires</dt>
+          <dd class="mt-1 text-neutral-300">macOS 13 or later</dd>
+        </div>
+        <div>
+          <dt class="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500">Signing</dt>
+          <dd class="mt-1 text-neutral-300">Ad-hoc, not notarized</dd>
+        </div>
+        <div>
+          <dt class="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500">Published build</dt>
+          <dd class="mt-1 text-neutral-300">x86_64, Rosetta 2 on Apple Silicon</dd>
+        </div>
+        <div>
+          <dt class="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500">Source</dt>
+          <dd class="mt-1"><a href="https://github.com/pradityaaldi/macbook-speaker-controll" class="text-neutral-300 underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-50">github.com/pradityaaldi</a></dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<footer class="border-t border-neutral-800 bg-neutral-950 px-5 py-8">
+  <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500">
+    <p>Speaker Control · Swift + CoreAudio</p>
+    <div class="flex gap-4">
+      <a href="https://github.com/pradityaaldi/macbook-speaker-controll" class="transition-colors hover:text-neutral-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-50">Source</a>
+      <a href="https://github.com/pradityaaldi/macbook-speaker-controll/releases" class="transition-colors hover:text-neutral-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-50">Releases</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const volume = document.getElementById('volume');
+  const volumeOut = document.getElementById('volume-out');
+  const left = document.getElementById('left');
+  const right = document.getElementById('right');
+  const leftOut = document.getElementById('left-out');
+  const rightOut = document.getElementById('right-out');
+  const mono = document.getElementById('mono');
+  const monoHint = document.getElementById('mono-hint');
+  const mute = document.getElementById('mute');
+  const muteSlash = document.getElementById('mute-slash');
+
+  function render() {
+    volumeOut.textContent = volume.value + '%';
+    leftOut.textContent = left.value + '%';
+    rightOut.textContent = right.value + '%';
+    monoHint.classList.toggle('hidden', Number(left.value) > 0 && Number(right.value) > 0);
+  }
+
+  volume.addEventListener('input', render);
+  left.addEventListener('input', render);
+  right.addEventListener('input', render);
+
+  function setSides(leftValue, rightValue, enableMono) {
+    left.value = leftValue;
+    right.value = rightValue;
+    if (enableMono) mono.checked = true;
+    render();
+  }
+
+  document.getElementById('left-only').addEventListener('click', () => setSides(100, 0, true));
+  document.getElementById('right-only').addEventListener('click', () => setSides(0, 100, true));
+  document.getElementById('stereo').addEventListener('click', () => setSides(50, 50, false));
+
+  let volumeBeforeMute = volume.value;
+  mute.addEventListener('click', () => {
+    const muted = mute.getAttribute('aria-pressed') === 'true';
+    if (muted) {
+      volume.value = volumeBeforeMute;
+    } else {
+      volumeBeforeMute = volume.value;
+      volume.value = 0;
+    }
+    mute.setAttribute('aria-pressed', String(!muted));
+    muteSlash.classList.toggle('hidden', muted);
+    render();
+  });
+
+  const copyButton = document.getElementById('copy');
+  const copyStatus = document.getElementById('copy-status');
+  copyButton.addEventListener('click', async () => {
+    const command = document.getElementById('install-cmd').textContent.trim();
+    try {
+      await navigator.clipboard.writeText(command);
+      copyStatus.textContent = 'Copied to clipboard.';
+    } catch {
+      copyStatus.textContent = 'Copy failed. Select the command and copy it manually.';
+    }
+  });
+
+  render();
+</script>
+</body>
+</html>

@@ -23,15 +23,18 @@ Built and tested on a MacBook Pro running macOS 15.7.
   `R` when only the right side is active).
 - Stays in sync with changes made elsewhere (keyboard volume keys, System Settings).
 
-## Download
+## Install
 
-Each [release](https://github.com/pradityaaldi/macbook-speaker-controll/releases/latest)
-carries a prebuilt app bundle:
+One command downloads the latest release and installs it into `/Applications`:
 
-1. Download the `SpeakerControl-<version>.zip` and unzip it.
-2. Move `Speaker Control.app` to `/Applications`.
-3. Launch it — the first time, **right-click → Open**, since the bundle is
-   ad-hoc signed rather than notarized.
+```bash
+curl -fsSL https://raw.githubusercontent.com/pradityaaldi/macbook-speaker-controll/main/install.sh | bash
+```
+
+Prefer to do it by hand? Grab the zip from the
+[latest release](https://github.com/pradityaaldi/macbook-speaker-controll/releases/latest),
+move `Speaker Control.app` to `/Applications`, then **right-click → Open** the
+first time, since the bundle is ad-hoc signed rather than notarized.
 
 The published build is `x86_64`; on Apple Silicon it runs under Rosetta 2.
 Build from source below for a native binary.
@@ -127,5 +130,15 @@ Sources/
 Resources/
   Info.plist
   AppIcon.icns
+docs/
+  index.html              Landing page served by GitHub Pages
+  demo.mp4
+  appicon.png
 build.sh
+install.sh                One-command installer for the latest release
 ```
+
+## Links
+
+- Landing page: <https://pradityaaldi.github.io/macbook-speaker-controll/>
+- Releases: <https://github.com/pradityaaldi/macbook-speaker-controll/releases>
