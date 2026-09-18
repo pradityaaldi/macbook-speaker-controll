@@ -10,7 +10,7 @@ Built and tested on a MacBook Pro running macOS 15.7.
 
 ## Demo
 
-<video src="demo.mp4" controls muted loop playsinline width="720"></video>
+<video src="https://github.com/user-attachments/assets/7c9d0fa7-6f87-4cb1-b876-75ab6172f43a" controls width="720"></video>
 
 ## Features
 
