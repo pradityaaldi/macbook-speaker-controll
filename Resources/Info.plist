@@ -8,6 +8,8 @@
 	<string>Speaker Control</string>
 	<key>CFBundleExecutable</key>
 	<string>SpeakerControl</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.aldi.speakercontrol</string>
 	<key>CFBundleInfoDictionaryVersion</key>

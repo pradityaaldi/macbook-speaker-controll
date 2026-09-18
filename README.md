@@ -1,103 +1,117 @@
-# Speaker Control
+# MacBook Speaker Control
 
-Aplikasi menu bar macOS untuk mengatur volume speaker kiri dan kanan secara terpisah,
-serta menonaktifkan salah satu sisi speaker (mode mono).
+Menu-bar app for macOS that controls the left and right speakers of your MacBook
+independently, and can disable either side — with a true mono downmix so nothing
+is lost.
 
-Dibuat untuk MacBook dengan speaker bawaan (diuji pada MacBook Pro, macOS 15.7).
+Built and tested on a MacBook Pro running macOS 15.7.
 
-## Fitur
+<img src="Resources/AppIcon.icns" width="96" alt="App icon">
 
-- **Main Volume** — mengatur volume perangkat seperti biasa.
-- **Left / Right Volume** — mengatur keseimbangan kiri dan kanan secara terpisah.
-- **Left Only / Right Only** — mematikan salah satu sisi speaker dengan satu klik.
-  Mono otomatis dinyalakan agar suara dari sisi yang dimatikan tidak hilang.
-- **Mono (mix L+R)** — menggabungkan channel kiri dan kanan, sehingga isi kedua
-  channel tetap terdengar walau hanya satu speaker yang aktif.
-- **Mute** — mute cepat.
-- Ikon menu bar menampilkan status: `L` bila hanya kiri aktif, `R` bila hanya kanan aktif.
-- Perubahan volume/pan dari tempat lain (tombol volume keyboard, System Settings)
-  ikut tersinkron ke tampilan aplikasi.
+## Features
+
+- **Left / Right volume** — trim each channel separately.
+- **Left Only / Right Only** — disable one speaker with a single click.
+  Mono is switched on automatically so the disabled side stays audible.
+- **Mono (mix L+R)** — sums both channels, so either speaker can play everything.
+- **Main volume** and **Mute** without leaving the menu bar.
+- Menu-bar icon shows the current state (`L` when only the left side is active,
+  `R` when only the right side is active).
+- Stays in sync with changes made elsewhere (keyboard volume keys, System Settings).
+- Ships with an app icon matching its sibling app,
+  [bocah-timer](https://github.com/pradityaaldi/bocah-timer).
 
 ## Build
 
-Butuh Command Line Tools (tanpa Xcode penuh):
+Requires the Xcode Command Line Tools (no full Xcode install needed):
 
-```sh
+```bash
 ./build.sh
 ```
 
-Hasilnya langsung terpasang di `/Applications/Speaker Control.app`.
-Skrip ini juga menutup instance yang sedang berjalan dan memperbarui indeks Spotlight,
-jadi tidak akan ada duplikat di hasil pencarian.
+The script builds the bundle straight into `/Applications/Speaker Control.app`,
+quits any running copy first, and refreshes the Spotlight index — so there is
+never a stale duplicate in search results.
 
-## Menjalankan
+## Run
 
-Buka lewat Spotlight (⌘+Space) dengan mengetik `Speaker Control`, atau:
+Open it from Spotlight (⌘+Space, type `Speaker Control`), or:
 
-```sh
+```bash
 open -a "Speaker Control"
 ```
 
-Ikon akan muncul di menu bar. Aplikasi tidak punya ikon Dock (menu bar only).
-Untuk keluar, tekan tombol **Quit** di dalam panel.
+The icon appears in the menu bar. There is no Dock icon. To exit, press **Quit**
+inside the panel.
 
-Agar otomatis jalan saat login: System Settings → General → Login Items → tambahkan
+To launch at login: **System Settings → General → Login Items** → add
 `Speaker Control.app`.
 
-## Cara kerjanya
+The build is ad-hoc signed and produced locally, so Gatekeeper does not prompt.
 
-macOS tidak menyediakan slider kiri/kanan untuk speaker bawaan (System Settings hanya
-punya satu volume). Aplikasi ini memakai CoreAudio HAL secara langsung:
+## How it works
 
-| Kebutuhan | API |
-|---|---|
-| Volume utama | `kAudioDevicePropertyVolumeScalar` (scope output) |
-| Keseimbangan kiri/kanan | `kAudioDevicePropertyStereoPan` |
-| Mono sejati | `kAudioHardwarePropertyMixStereoToMono` |
+macOS gives the built-in speakers a single volume control and no left/right
+slider. This app talks to the CoreAudio HAL directly:
 
-**Kenapa perlu `MixStereoToMono`.** Pan pada perangkat bersifat *balance*, bukan
-*downmix* — ia meredam channel yang berlawanan, bukan menjumlahkannya. Hal ini sudah
-diverifikasi lewat pengukuran akustik: tone yang hanya ada di channel kanan menjadi
-hilang total (turun ke level noise floor) ketika pan digeser penuh ke kiri.
-Tanpa downmix, menonaktifkan satu speaker berarti kehilangan isi channel tersebut.
+| Purpose | API |
+| --- | --- |
+| Main volume | `kAudioDevicePropertyVolumeScalar` (output scope) |
+| Left/right balance | `kAudioDevicePropertyStereoPan` |
+| True mono | `kAudioHardwarePropertyMixStereoToMono` |
 
-`kAudioHardwarePropertyMixStereoToMono` adalah API publik CoreAudio yang sama dengan
-setting Accessibility → Audio → "Play stereo audio as mono". Semua diproses di level
-driver audio, jadi berlaku untuk seluruh aplikasi tanpa perlu memasang driver tambahan.
+### Why the mono downmix is required
 
-**Pemetaan slider.** Perangkat memakai pan law *constant-power*:
-`gain kiri = cos(p·π/2)`, `gain kanan = sin(p·π/2)`. Kurva ini diukur dengan memutar
-dua tone berbeda frekuensi per channel dan menganalisis rekaman mic internal — hasilnya
-cocok dalam ±0.5 dB. Karena itu slider memakai invers eksaknya:
+Pan on these devices is a **balance** control, not a downmix: it attenuates the
+opposite channel instead of summing it. That was confirmed by acoustic
+measurement — a tone present only in the right channel drops to the noise floor
+when pan is moved fully left. Disabling one speaker with pan alone therefore
+loses whatever was in that channel.
+
+`kAudioHardwarePropertyMixStereoToMono` is the public CoreAudio property behind
+**Accessibility → Audio → "Play stereo audio as mono"**. It runs inside the audio
+driver, so it applies to every app with no extra driver to install.
+
+### Slider mapping
+
+The device uses a *constant-power* pan law: `left gain = cos(p·π/2)`,
+`right gain = sin(p·π/2)`. The curve was measured by playing two different tones
+(one per channel) and analysing a recording captured with the built-in
+microphone; it matches theory within about 0.5 dB. The sliders therefore use its
+exact inverse:
 
 ```
-p = 2/π · atan2(kanan, kiri)
+p = 2/π · atan2(right, left)
 ```
 
-sehingga Kiri 100% / Kanan 50% benar-benar menghasilkan rasio 2:1, dan
-Kiri 100% / Kanan 0% menghasilkan pan penuh ke kiri.
+so *Left 100% / Right 50%* really is a 2:1 ratio, and *Left 100% / Right 0%*
+is a full pan to the left.
 
-## Catatan
+## Notes
 
-- **Mode Mono bersifat sistem-wide.** Ini mengubah output seluruh sistem, sama seperti
-  mengubahnya di System Settings. Kalau kamu menyalakannya lewat aplikasi ini, setting
-  itu tetap aktif sampai kamu matikan kembali.
-- Saat satu sisi disetel ke 0%, aplikasi menampilkan peringatan untuk menyalakan Mono.
-  Tombol **Left Only** / **Right Only** menyalakannya otomatis; menggeser slider
-  secara manual tidak, supaya tidak mengubah setting sistem tanpa disadari.
-- Kontrol kiri/kanan hanya tersedia bila perangkat output mendukung `StereoPan`.
-  Sebagian perangkat (mis. beberapa adapter Bluetooth) tidak mendukungnya — slider akan
-  otomatis dinonaktifkan dan alasannya ditampilkan di header.
-- Aplikasi mengikuti perangkat output default. Saat kamu mencolok headphone, aplikasi
-  otomatis beralih ke perangkat tersebut.
+- **Mono is a system-wide setting.** It changes output for the whole system, the
+  same as toggling it in System Settings, and coreaudiod persists it in
+  `/Library/Preferences/Audio/com.apple.audio.SystemSettings.plist` — so it
+  survives restarts until you turn it off again.
+- When a side is set to 0%, the panel shows a prompt to enable Mono. The
+  **Left Only** / **Right Only** buttons enable it for you; dragging a slider
+  does not, so the system setting is never changed behind your back.
+- Left/right control needs a device that supports `StereoPan`. Some devices
+  (certain Bluetooth adapters, for example) do not — the sliders are then
+  disabled and the panel says so in the headline.
+- The app follows the default output device, so plugging in headphones switches
+  it automatically.
 
-## Struktur
+## Layout
 
 ```
 Sources/
-  AudioController.swift   # lapisan CoreAudio: baca/tulis properti, listener, pemetaan pan
-  ControlPanel.swift      # tampilan panel menu bar
-  SpeakerControlApp.swift # entry point MenuBarExtra
-Resources/Info.plist
+  AudioController.swift   CoreAudio layer: property reads/writes, listeners, pan mapping
+  ControlPanel.swift      Menu-bar panel UI
+  Theme.swift             Colours, slider, toggle and button styles
+  SpeakerControlApp.swift MenuBarExtra entry point
+Resources/
+  Info.plist
+  AppIcon.icns
 build.sh
 ```

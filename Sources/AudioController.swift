@@ -307,4 +307,13 @@ extension AudioController {
             && !(leftTrim < 0.02 && rightTrim < 0.02)
             && (leftTrim < 0.02 || rightTrim < 0.02)
     }
+
+    var stateLabel: String {
+        if !panSupported { return "NO OUTPUT" }
+        if leftTrim < 0.02 && rightTrim < 0.02 { return "SILENT" }
+        if rightTrim < 0.02 { return "LEFT ONLY" }
+        if leftTrim < 0.02 { return "RIGHT ONLY" }
+        if abs(leftTrim - rightTrim) < 0.02 { return "STEREO" }
+        return "CUSTOM"
+    }
 }
