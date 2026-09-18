@@ -22,8 +22,19 @@ Built and tested on a MacBook Pro running macOS 15.7.
 - Menu-bar icon shows the current state (`L` when only the left side is active,
   `R` when only the right side is active).
 - Stays in sync with changes made elsewhere (keyboard volume keys, System Settings).
-- Ships with an app icon matching its sibling app,
-  [bocah-timer](https://github.com/pradityaaldi/bocah-timer).
+
+## Download
+
+Each [release](https://github.com/pradityaaldi/macbook-speaker-controll/releases/latest)
+carries a prebuilt app bundle:
+
+1. Download the `SpeakerControl-<version>.zip` and unzip it.
+2. Move `Speaker Control.app` to `/Applications`.
+3. Launch it — the first time, **right-click → Open**, since the bundle is
+   ad-hoc signed rather than notarized.
+
+The published build is `x86_64`; on Apple Silicon it runs under Rosetta 2.
+Build from source below for a native binary.
 
 ## Build
 
