@@ -6,7 +6,7 @@ is lost.
 
 Built and tested on a MacBook Pro running macOS 15.7.
 
-<img src="Resources/AppIcon.icns" width="96" alt="App icon">
+<img src="Resources/AppIcon.png" width="96" alt="App icon">
 
 ## Features
 
