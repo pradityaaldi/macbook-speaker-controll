@@ -4,185 +4,154 @@ import AppKit
 struct ControlPanel: View {
     @ObservedObject var audio: AudioController
 
-    private let repositoryURL = URL(string: "https://github.com/pradityaaldi/macbook-speaker-controll")!
-
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 13) {
             header
-            VStack(alignment: .leading, spacing: 0) {
-                hero
-                GroupLabel(text: "Volume")
-                mainVolumeRow
-                GroupLabel(text: "Balance")
-                channelRow(title: "Left", isLeft: true)
-                channelRow(title: "Right", isLeft: false)
-                quickActions
-                GroupLabel(text: "Output")
-                deviceRow
-                monoRow
-                muteRow
-                if audio.needsMonoHint { hintBox }
-                if let error = audio.lastError { errorBox(error) }
-                quitButton
-            }
-            .padding(.horizontal, 18)
-            .padding(.top, 18)
-            .padding(.bottom, 20)
+            Divider()
+            volumeSection
+            balanceSection
+            quickActions
+            monoSection
+            if audio.needsMonoHint { monoHint }
+            if let error = audio.lastError { errorRow(error) }
+            Divider()
+            footer
         }
+        .padding(14)
         .frame(width: 340)
-        .background(Theme.background)
-        .environment(\.colorScheme, .dark)
     }
 
     private var header: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("SPEAKER CONTROL")
-                    .font(.system(size: 17, weight: .heavy))
-                    .kerning(0.5)
-                    .foregroundStyle(Theme.textPrimary)
-                Text("by praditya")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(Theme.textPrimary)
+        HStack(spacing: 9) {
+            Image(systemName: "hifispeaker.fill")
+                .font(.system(size: 20))
+                .foregroundStyle(.tint)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(audio.device?.name ?? "No Output Device")
+                    .font(.headline)
+                    .lineLimit(1)
+                Text(audio.panSupported
+                     ? "Left/right control available"
+                     : "This device does not support left/right control")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             Spacer()
-            Button {
-                NSWorkspace.shared.open(repositoryURL)
-            } label: {
-                Image(systemName: "arrow.up.right.square")
-                    .font(.system(size: 18))
-            }
-            .buttonStyle(IconButtonStyle())
-            .help("Open repository")
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 9)
-        .background(Theme.header)
     }
 
-    private var hero: some View {
-        Text(audio.stateLabel)
-            .font(.system(size: 30, weight: .heavy))
-            .kerning(0.6)
-            .foregroundStyle(Theme.accent)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.top, 4)
-            .padding(.bottom, 18)
-    }
-
-    private var mainVolumeRow: some View {
-        field(divider: false) {
+    private var volumeSection: some View {
+        VStack(alignment: .leading, spacing: 3) {
             HStack {
-                Text("Main volume").rowLabel()
+                Text("Main Volume").font(.subheadline.weight(.medium))
                 Spacer()
-                Text(percent(audio.deviceVolume)).rowValue()
+                Text("\(Int((audio.deviceVolume * 100).rounded()))%")
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(.secondary)
             }
-            BocahSlider(value: volumeBinding)
+            HStack(spacing: 8) {
+                Image(systemName: audio.isMuted ? "speaker.slash.fill" : "speaker.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Slider(value: volumeBinding, in: 0...1)
+                Image(systemName: "speaker.wave.3.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
-    private func channelRow(title: String, isLeft: Bool) -> some View {
+    private var balanceSection: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text("Left / Right Volume").font(.subheadline.weight(.medium))
+            HStack(spacing: 16) {
+                channelColumn(title: "Left", systemImage: "arrow.left", isLeft: true)
+                channelColumn(title: "Right", systemImage: "arrow.right", isLeft: false)
+            }
+            .disabled(!audio.panSupported)
+            .opacity(audio.panSupported ? 1 : 0.45)
+        }
+    }
+
+    private func channelColumn(title: String, systemImage: String, isLeft: Bool) -> some View {
         let value = isLeft ? audio.leftTrim : audio.rightTrim
-        return field {
-            HStack {
-                Text(title).rowLabel()
+        return VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 4) {
+                Image(systemName: systemImage).font(.caption2)
+                Text(title).font(.caption.weight(.medium))
                 Spacer()
-                Text(percent(value)).rowValue()
+                Text("\(Int((value * 100).rounded()))%")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
             }
-            BocahSlider(value: trimBinding(isLeft), enabled: audio.panSupported)
+            Slider(value: trimBinding(isLeft), in: 0...1)
         }
     }
 
     private var quickActions: some View {
         HStack(spacing: 7) {
-            Button("Left Only") { audio.routeToLeftOnly() }
-                .buttonStyle(BocahButtonStyle())
-            Button("Right Only") { audio.routeToRightOnly() }
-                .buttonStyle(BocahButtonStyle())
-            Button("Stereo") { audio.centerBalance() }
-                .buttonStyle(BocahButtonStyle(filled: true))
+            Button { audio.routeToLeftOnly() } label: {
+                Label("Left Only", systemImage: "arrow.left.circle")
+                    .frame(maxWidth: .infinity)
+            }
+            Button { audio.routeToRightOnly() } label: {
+                Label("Right Only", systemImage: "arrow.right.circle")
+                    .frame(maxWidth: .infinity)
+            }
+            Button { audio.centerBalance() } label: {
+                Label("Stereo", systemImage: "arrow.left.and.right.circle")
+                    .frame(maxWidth: .infinity)
+            }
         }
+        .controlSize(.small)
         .disabled(!audio.panSupported)
-        .opacity(audio.panSupported ? 1 : 0.45)
-        .padding(.top, 12)
     }
 
-    private var deviceRow: some View {
-        field(divider: false) {
-            HStack {
-                Text("Device").rowLabel()
-                Spacer()
-                Text(audio.device?.name ?? "No output device")
-                    .font(Theme.sans(12))
-                    .foregroundStyle(Theme.textMuted)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+    private var monoSection: some View {
+        Toggle(isOn: monoBinding) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Mono (mix L+R)").font(.subheadline.weight(.medium))
+                Text("Audio from the disabled side stays audible")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
+        .toggleStyle(.switch)
     }
 
-    private var monoRow: some View {
-        toggleRow(title: "Mono (mix L+R)", binding: monoBinding)
-    }
-
-    private var muteRow: some View {
-        toggleRow(title: "Mute", binding: muteBinding)
-    }
-
-    private func toggleRow(title: String, binding: Binding<Bool>) -> some View {
-        field {
-            HStack {
-                Text(title).rowLabel()
-                Spacer()
-                BocahToggle(isOn: binding)
-            }
+    private var monoHint: some View {
+        HStack(alignment: .top, spacing: 7) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .font(.caption)
+            Text("One side is disabled. Turn on Mono so its audio is not lost.")
+                .font(.caption)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
     }
 
-    private var hintBox: some View {
-        Text("One side is disabled. Turn on Mono so its audio is not lost.")
-            .font(Theme.sans(11))
-            .foregroundStyle(Theme.accent)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Theme.accent.opacity(0.12))
-            )
-            .padding(.top, 12)
-    }
-
-    private func errorBox(_ message: String) -> some View {
+    private func errorRow(_ message: String) -> some View {
         Text(message)
-            .font(Theme.sans(11))
-            .foregroundStyle(Color(hex: 0xE0716A))
+            .font(.caption)
+            .foregroundStyle(.red)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 10)
     }
 
-    private var quitButton: some View {
-        Button("Quit") { NSApp.terminate(nil) }
-            .buttonStyle(BocahButtonStyle())
-            .padding(.top, 16)
-    }
-
-    @ViewBuilder
-    private func field<Content: View>(divider: Bool = true, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            content()
-        }
-        .padding(.vertical, 10)
-        .overlay(alignment: .top) {
-            if divider {
-                Rectangle().fill(Theme.divider).frame(height: 1)
+    private var footer: some View {
+        HStack {
+            Toggle(isOn: muteBinding) {
+                Label("Mute", systemImage: "speaker.slash")
+                    .font(.subheadline)
             }
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            Spacer()
+            Button("Quit") { NSApp.terminate(nil) }
+                .controlSize(.small)
         }
-    }
-
-    private func percent(_ value: Float) -> String {
-        "\(Int((value * 100).rounded()))%"
     }
 
     private var volumeBinding: Binding<Double> {
@@ -205,15 +174,5 @@ struct ControlPanel: View {
                 audio.applyPanFromTrims()
             }
         )
-    }
-}
-
-private extension Text {
-    func rowLabel() -> some View {
-        font(Theme.sans(13, .medium)).foregroundStyle(Theme.textSecondary)
-    }
-
-    func rowValue() -> some View {
-        font(Theme.sans(12)).monospacedDigit().foregroundStyle(Theme.textMuted)
     }
 }

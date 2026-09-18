@@ -108,7 +108,6 @@ is a full pan to the left.
 Sources/
   AudioController.swift   CoreAudio layer: property reads/writes, listeners, pan mapping
   ControlPanel.swift      Menu-bar panel UI
-  Theme.swift             Colours, slider, toggle and button styles
   SpeakerControlApp.swift MenuBarExtra entry point
 Resources/
   Info.plist
