@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO="pradityaaldi/macbook-speaker-controll"
 APP_NAME="Speaker Control"
+EXECUTABLE="SpeakerControl"
 DEST="/Applications/${APP_NAME}.app"
 
 if [ "$(uname -s)" != "Darwin" ]; then
@@ -39,7 +40,7 @@ if [ ! -d "${TMP_DIR}/unpacked/${APP_NAME}.app" ]; then
   exit 1
 fi
 
-osascript -e "quit app \"${APP_NAME}\"" >/dev/null 2>&1 || true
+pkill -x "${EXECUTABLE}" >/dev/null 2>&1 || true
 
 rm -rf "${DEST}"
 ditto "${TMP_DIR}/unpacked/${APP_NAME}.app" "${DEST}"
@@ -47,4 +48,5 @@ xattr -dr com.apple.quarantine "${DEST}" 2>/dev/null || true
 mdimport "${DEST}" >/dev/null 2>&1 || true
 
 echo "Installed ${DEST}"
-echo "Launch it with: open -a \"${APP_NAME}\""
+open "${DEST}"
+echo "Speaker Control is running in your menu bar."

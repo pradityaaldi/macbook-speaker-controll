@@ -7,7 +7,7 @@ EXECUTABLE="SpeakerControl"
 APP="/Applications/${APP_NAME}.app"
 ARCH="$(uname -m)"
 
-osascript -e "quit app \"${APP_NAME}\"" >/dev/null 2>&1 || true
+pkill -x "${EXECUTABLE}" >/dev/null 2>&1 || true
 sleep 1
 
 rm -rf "$APP"

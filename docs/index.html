@@ -201,7 +201,7 @@
     <div>
       <h2 class="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-400">Install</h2>
       <p class="mt-3 text-xl font-medium text-white">One command, no build tools.</p>
-      <p class="mt-3 max-w-md text-sm leading-relaxed text-neutral-400">Downloads the latest release into <code class="font-mono text-neutral-200">/Applications</code>, quits any running copy first, and clears the quarantine flag so Gatekeeper stays quiet.</p>
+      <p class="mt-3 max-w-md text-sm leading-relaxed text-neutral-400">Downloads the latest release into <code class="font-mono text-neutral-200">/Applications</code>, clears the download flag so Gatekeeper stays quiet, and launches it in your menu bar. No second command, no warning dialog.</p>
 
       <div class="mt-6 border border-neutral-700 bg-neutral-900">
         <div class="flex items-center justify-between gap-3 border-b border-neutral-800 px-3 py-2">
@@ -219,8 +219,10 @@
       <ol class="mt-3 max-w-md space-y-2 text-sm leading-relaxed text-neutral-400">
         <li>Download the bundle from the latest release.</li>
         <li>Move <code class="font-mono text-neutral-200">Speaker Control.app</code> to <code class="font-mono text-neutral-200">/Applications</code>.</li>
-        <li>Launch it: the first time, right-click, then <span class="text-neutral-200">Open</span>.</li>
+        <li>Clear the download flag, then launch it:</li>
       </ol>
+      <pre class="mt-3 overflow-x-auto border border-neutral-800 bg-neutral-900 px-3 py-2 font-mono text-xs text-neutral-100"><code>xattr -dr com.apple.quarantine "/Applications/Speaker Control.app"</code></pre>
+      <p class="mt-3 max-w-md text-sm leading-relaxed text-neutral-500">A browser download carries a quarantine flag, and the bundle is ad-hoc signed rather than notarized, so macOS asks about it. The curl line above never sets that flag.</p>
 
       <div class="mt-6 flex flex-wrap gap-2">
         <a href="https://github.com/pradityaaldi/macbook-speaker-controll/releases/latest" class="border border-neutral-50 bg-neutral-50 px-4 py-2 text-sm font-medium text-neutral-950 transition-colors hover:bg-neutral-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-50">Download the latest release</a>

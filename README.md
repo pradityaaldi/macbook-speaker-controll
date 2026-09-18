@@ -25,7 +25,8 @@ Built and tested on a MacBook Pro running macOS 15.7.
 
 ## Install
 
-One command downloads the latest release and installs it into `/Applications`:
+One command downloads the latest release, installs it into `/Applications`, and
+launches it in your menu bar:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/pradityaaldi/macbook-speaker-controll/main/install.sh | bash
@@ -33,8 +34,15 @@ curl -fsSL https://raw.githubusercontent.com/pradityaaldi/macbook-speaker-contro
 
 Prefer to do it by hand? Grab the zip from the
 [latest release](https://github.com/pradityaaldi/macbook-speaker-controll/releases/latest),
-move `Speaker Control.app` to `/Applications`, then **right-click → Open** the
-first time, since the bundle is ad-hoc signed rather than notarized.
+move `Speaker Control.app` to `/Applications`, then clear the quarantine flag:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Speaker Control.app"
+```
+
+The bundle is ad-hoc signed rather than notarized, so Gatekeeper flags a browser
+download until that flag is removed. The script above avoids the warning
+entirely, because `curl` never sets it.
 
 The published build is `x86_64`; on Apple Silicon it runs under Rosetta 2.
 Build from source below for a native binary.
